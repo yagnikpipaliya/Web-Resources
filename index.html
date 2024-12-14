@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Firebase SDK (modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2SWES3kdhIY2gnQz8ZdgNOxQ3Je2M548",
+            authDomain: "test-d8211.firebaseapp.com",
+            projectId: "test-d8211",
+            storageBucket: "test-d8211.firebasestorage.app",
+            messagingSenderId: "399658200896",
+            appId: "1:399658200896:web:bea08f21a95889318f14a5",
+            measurementId: "G-KHBLPXBCZ9"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const analytics = getAnalytics(app);
+
+        // Get categories and populate the dropdown
+        async function getCategories() {
+            const categoriesRef = collection(db, 'categories');
+            const categorySnapshot = await getDocs(categoriesRef);
+            const categoriesList = categorySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().categoryName }));
+
+            const categorySelect = document.getElementById('resourceCategory');
+            categorySelect.innerHTML = '<option value="">Select Category</option>';  // Reset options
+
+            categoriesList.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                categorySelect.appendChild(option);
+            });
+
+            // Populate category list in modal
+            const categoryList = document.getElementById('categoryList');
+            categoryList.innerHTML = '';  // Clear the list
+
+            categoriesList.forEach(category => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('flex', 'justify-between', 'items-center', 'mb-2');
+                listItem.innerHTML = `
+                    <span>${category.name}</span>
+                    <button class="text-red-500" onclick="deleteCategory('${category.id}')">Delete</button>
+                `;
+                categoryList.appendChild(listItem);
+            });
+        }
+
+        // Add a new category
+        document.getElementById('addCategoryBtn').addEventListener('click', async () => {
+            const categoryName = document.getElementById('newCategory').value;
+            if (categoryName.trim()) {
+                const categoriesRef = collection(db, 'categories');
+                await addDoc(categoriesRef, { categoryName });
+                getCategories(); // Refresh categories
+                $('#categoryModal').fadeOut(); // Close modal with animation
+                document.getElementById('newCategory').value = ''; // Clear input
+                Swal.fire('Category added successfully!');
+            } else {
+                Swal.fire('Please enter a category name.');
+            }
+        });
+
+        // Add a new resource
+        document.getElementById('resourceForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const title = document.getElementById('resourceTitle').value;
+            const link = document.getElementById('resourceLink').value;
+            const categoryId = document.getElementById('resourceCategory').value;
+            const tag = document.getElementById('resourceTag').value;
+
+            if (!title || !link || !categoryId) {
+                Swal.fire('Please fill in all fields.');
+                return;
+            }
+
+            const resourcesRef = collection(db, 'resources');
+            await addDoc(resourcesRef, { title, link, tag, categoryId });
+            getResources();  // Refresh resources
+            $('#addResourceModal').fadeOut(); // Close modal
+            document.getElementById('resourceForm').reset(); // Clear form fields
+            Swal.fire('Resource added successfully!');
+        });
+
+        // Fetch and display resources
+        async function getResources() {
+            const resourcesRef = collection(db, 'resources');
+            const resourceSnapshot = await getDocs(resourcesRef);
+            const resourceList = resourceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            const resourceTable = document.getElementById('resourceTable');
+            resourceTable.innerHTML = '';  // Reset table content
+
+            resourceList.forEach(resource => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-4 py-2">${resource.title}</td>
+                    <td class="px-4 py-2 text-center">
+                        <a href="${resource.link}" class="px-10 py-2 bg-green-500 text-white rounded" target="_blank" class="text-blue-500">Link</a>
+                        <button class="px-4 py-2 bg-red-500 text-white rounded" onclick="deleteResource('${resource.id}')">Delete</button>
+                    </td>
+                `;
+                // <td class="px-4 py-2"><a href="${resource.link}" class="px-10 py-2 bg-green-500 text-white rounded" target="_blank" class="text-blue-500">Link</a></td>
+                resourceTable.appendChild(row);
+            });
+        }
+
+        // Delete resource
+        async function deleteResource(id) {
+            await deleteDoc(doc(db, 'resources', id));
+            getResources(); // Refresh resource list
+            Swal.fire('Resource deleted successfully!');
+        }
+
+        // Delete category
+        async function deleteCategory(id) {
+            await deleteDoc(doc(db, 'categories', id));
+            getCategories(); // Refresh category list
+            Swal.fire('Category deleted successfully!');
+        }
+
+        // Fetch resources on page load
+        getResources();
+        getCategories();
+
+    </script>
+</head>
+
+<body class="bg-gray-100 font-sans p-8">
+
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Resource Manager</h1>
+        <div>
+            <button id="addResourceBtn" class="px-6 py-3 bg-blue-500 text-white rounded-lg">Add Resource</button>
+            <button id="openCategoryModal" class="px-6 py-3 bg-green-500 text-white rounded-lg ml-4">Manage Categories</button>
+        </div>
+    </div>
+
+    <!-- Resource Table -->
+    <table class="w-full bg-white shadow-md rounded" id="categoryTable">
+        <thead class="bg-blue-600 text-white">
+            <tr>
+                <th class="px-4 py-2">Title</th>
+                <!-- <th class="px-4 py-2">Link</th> -->
+                <th class="px-4 py-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="resourceTable">
+            <!-- Dynamic rows will appear here -->
+        </tbody>
+    </table>
+
+    <!-- Add Resource Modal -->
+    <div id="addResourceModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white p-6 rounded-lg w-96 transform scale-95 transition-transform duration-300 ease-in-out">
+            <h2 class="text-xl font-bold mb-4">Add New Resource</h2>
+            <form id="resourceForm">
+                <div class="mb-4">
+                    <label for="resourceTitle" class="block font-medium">Title</label>
+                    <input type="text" id="resourceTitle" class="w-full p-3 border rounded" placeholder="Resource Title">
+                </div>
+                <div class="mb-4">
+                    <label for="resourceLink" class="block font-medium">Link</label>
+                    <input type="url" id="resourceLink" class="w-full p-3 border rounded" placeholder="https://example.com">
+                </div>
+                <div class="mb-4">
+                    <label for="resourceCategory" class="block font-medium">Category</label>
+                    <select id="resourceCategory" class="w-full p-3 border rounded">
+                        <!-- Dynamic categories will appear here -->
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="resourceTag" class="block font-medium">Tag</label>
+                    <input type="text" id="resourceTag" class="w-full p-3 border rounded" placeholder="Tag">
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" id="cancelModal" class="px-4 py-2 bg-gray-400 text-white rounded mr-2">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white p-6 rounded-lg w-96 transform scale-95 transition-transform duration-300 ease-in-out">
+            <h2 class="text-xl font-bold mb-4">Manage Categories</h2>
+            <div class="mb-4">
+                <input type="text" id="newCategory" class="w-full p-3 border rounded" placeholder="New Category Name">
+            </div>
+            <div class="flex justify-between items-center">
+                <button id="addCategoryBtn" class="px-4 py-2 bg-green-500 text-white rounded">Add Category</button>
+                <button id="closeCategoryModal" class="px-4 py-2 bg-red-500 text-white rounded">Close</button>
+            </div>
+            <ul id="categoryList" class="mt-4">
+                <!-- Categories will appear here -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('addResourceBtn').addEventListener('click', function() {
+            document.getElementById('addResourceModal').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('addResourceModal').classList.add('opacity-100', 'pointer-events-auto');
+        });
+
+        document.getElementById('cancelModal').addEventListener('click', function() {
+            document.getElementById('addResourceModal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('addResourceModal').classList.remove('opacity-100', 'pointer-events-auto');
+        });
+
+        document.getElementById('openCategoryModal').addEventListener('click', function() {
+            document.getElementById('categoryModal').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('categoryModal').classList.add('opacity-100', 'pointer-events-auto');
+        });
+
+        document.getElementById('closeCategoryModal').addEventListener('click', function() {
+            document.getElementById('categoryModal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('categoryModal').classList.remove('opacity-100', 'pointer-events-auto');
+        });
+    </script>
+</body>
+
+
+</html>

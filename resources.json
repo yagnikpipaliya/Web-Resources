@@ -1,0 +1,17 @@
+[
+    {
+      "id": 1,
+      "title": "Tailwind CSS Documentation",
+      "link": "https://tailwindcss.com/docs",
+      "tags": ["CSS", "Framework"],
+      "category": "Frontend"
+    },
+    {
+      "id": 2,
+      "title": "Node.js Documentation",
+      "link": "https://nodejs.org/docs",
+      "tags": ["JavaScript", "Backend"],
+      "category": "Backend"
+    }
+  ]
+  
