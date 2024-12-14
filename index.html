@@ -50,12 +50,16 @@
                 document.getElementById('authButtons').classList.add('hidden');
                 document.getElementById('logoutBtn').classList.remove('hidden');
                 document.getElementById('resourceSection').classList.remove('hidden');
+                document.getElementById('openCategoryModal').classList.remove('hidden');
+                document.getElementById('addResourceBtn').classList.remove('hidden');
                 getCategories();
                 getResources();
             } else {
                 document.getElementById('authButtons').classList.remove('hidden');
                 document.getElementById('logoutBtn').classList.add('hidden');
                 document.getElementById('resourceSection').classList.add('hidden');
+                document.getElementById('openCategoryModal').classList.add('hidden');
+                document.getElementById('addResourceBtn').classList.add('hidden');
             }
         });
 
@@ -94,6 +98,7 @@
             try {
                 await signOut(auth);
                 Swal.fire('Logged out successfully!');
+                window.location.reload();
             } catch (error) {
                 Swal.fire('Error', error.message, 'error');
             }
@@ -138,29 +143,13 @@
             if (categoryName.trim()) {
                 const categoriesRef = collection(db, 'categories');
                 await addDoc(categoriesRef, { categoryName });
-                getCategories(); // Refresh categories
-                $('#categoryModal').fadeOut(); // Close modal with animation
-                document.getElementById('categoryForm').reset(); // Reset the form fields
                 Swal.fire('Category added successfully!');
+                window.location.reload();
             } else {
                 Swal.fire('Please enter a category name.');
             }
         });
 
-        // // Add a new category
-        // document.getElementById('addCategoryBtn').addEventListener('click', async () => {
-        //     const categoryName = document.getElementById('newCategory').value;
-        //     if (categoryName.trim()) {
-        //         const categoriesRef = collection(db, 'categories');
-        //         await addDoc(categoriesRef, { categoryName });
-        //         getCategories(); // Refresh categories
-        //         $('#categoryModal').fadeOut(); // Close modal with animation
-        //         document.getElementById('newCategory').value = ''; // Clear input
-        //         Swal.fire('Category added successfully!');
-        //     } else {
-        //         Swal.fire('Please enter a category name.');
-        //     }
-        // });
 
         // Add a new resource
         document.getElementById('resourceForm').addEventListener('submit', async (event) => {
@@ -178,10 +167,9 @@
 
             const resourcesRef = collection(db, 'resources');
             await addDoc(resourcesRef, { title, link, tag, categoryId });
-            getResources();  // Refresh resources
             $('#addResourceModal').fadeOut(); // Close modal
-            document.getElementById('resourceForm').reset(); // Clear form fields
             Swal.fire('Resource added successfully!');
+            window.location.reload();
         });
 
 
@@ -279,10 +267,11 @@
         </div>
 
         <!-- Search Bar for Resource Table -->
-        <div class="mb-4">
-            <input type="text" id="searchInput" class="w-full p-3 bg-gray-800 text-white rounded-lg shadow-md"
-                placeholder="Search resources...">
+        <div class="mb-4 flex items-center bg-gray-800 p-3 rounded-lg shadow-md">
+            <i class="bi bi-search text-white mr-3"></i> <!-- Magnifying glass icon -->
+            <input type="text" id="searchInput" class="w-full bg-gray-800 text-white focus:outline-none" placeholder="Search resources...">
         </div>
+        
 
         <!-- Resource Display Section (Iframe) -->
         <div id="resourceSection" class="mb-8">
@@ -371,16 +360,16 @@
 
     <!-- Login Modal -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
-        <div class="bg-white p-6 rounded-lg w-96">
+        <div class=" bg-slate-900 text-white p-6 rounded-lg w-96">
             <h2 class="text-xl font-bold mb-4">Login</h2>
             <form id="loginForm">
                 <div class="mb-4">
                     <label for="loginEmail" class="block font-medium">Email</label>
-                    <input type="email" id="loginEmail" class="w-full p-3 border rounded" placeholder="Enter email">
+                    <input type="email" id="loginEmail" class="w-full p-3 border rounded text-black" placeholder="Enter email">
                 </div>
                 <div class="mb-4">
                     <label for="loginPassword" class="block font-medium">Password</label>
-                    <input type="password" id="loginPassword" class="w-full p-3 border rounded"
+                    <input type="password" id="loginPassword" class="w-full p-3 border rounded text-black"
                         placeholder="Enter password">
                 </div>
                 <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded w-full sm:w-auto">Login</button>
@@ -390,16 +379,16 @@
 
     <!-- Register Modal -->
     <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
-        <div class="bg-white p-6 rounded-lg w-96">
+        <div class=" bg-slate-900 text-white p-6 rounded-lg w-96">
             <h2 class="text-xl font-bold mb-4">Register</h2>
             <form id="registerForm">
                 <div class="mb-4">
                     <label for="registerEmail" class="block font-medium">Email</label>
-                    <input type="email" id="registerEmail" class="w-full p-3 border rounded" placeholder="Enter email">
+                    <input type="email" id="registerEmail" class="w-full p-3 border rounded text-black" placeholder="Enter email">
                 </div>
                 <div class="mb-4">
                     <label for="registerPassword" class="block font-medium">Password</label>
-                    <input type="password" id="registerPassword" class="w-full p-3 border rounded"
+                    <input type="password" id="registerPassword" class="w-full p-3 border rounded text-black"
                         placeholder="Enter password">
                 </div>
                 <button type="submit"
